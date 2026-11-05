@@ -1,0 +1,24 @@
+{
+  "name": "restaurantos",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w apps/api\" \"npm run dev -w apps/web\"",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:web": "npm run dev -w apps/web",
+    "start:api": "npm run start -w apps/api",
+    "build:web": "npm run build -w apps/web",
+    "seed:superadmin": "npm run seed:superadmin -w apps/api"
+  },
+  "devDependencies": {
+    "caniuse-lite": "^1.0.30001820",
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}
