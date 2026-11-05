@@ -11,6 +11,7 @@ import orderRoutes from "./routes/orders.js";
 import paymentRoutes, { razorpayWebhook } from "./routes/payments.js";
 import kitchenRoutes from "./routes/kitchen.js";
 import { env } from "./config/env.js";
+import { connectDatabase } from "./config/db.js";
 
 function isPrivateIpv4(address) {
   const octets = address.split(".").map(Number);
@@ -42,19 +43,37 @@ function isAllowedLanWebOrigin(origin) {
   }
 }
 
+function isSameOrigin(origin, req) {
+  try {
+    return new URL(origin).origin === new URL(`${req.protocol}://${req.get("host")}`).origin;
+  } catch {
+    return false;
+  }
+}
+
 const app = express();
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(cors({
-  origin(origin, callback) {
-    const allowed = !origin ||
+app.use(cors((req, callback) => {
+  const origin = req.get("Origin");
+  const allowed = !origin ||
       origin === env.webOrigin ||
+      isSameOrigin(origin, req) ||
       (env.nodeEnv === "development" && isAllowedLanWebOrigin(origin));
-    callback(null, allowed);
-  },
-  credentials: true
+  callback(null, {
+    origin: allowed ? origin : false,
+    credentials: true
+  });
 }));
 app.use(pinoHttp({ autoLogging: false }));
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDatabase();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 app.use(cookieParser());
 app.post("/api/v1/webhooks/razorpay", express.raw({ type: "application/json", limit: "1mb" }), razorpayWebhook);
 app.use(express.json({ limit: "1mb" }));

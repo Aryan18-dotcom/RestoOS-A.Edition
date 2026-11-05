@@ -1,4 +1,5 @@
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API = process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "");
 
 function isPrivateIpv4(hostname) {
   const octets = hostname.split(".").map(Number);
@@ -10,6 +11,7 @@ function isPrivateIpv4(hostname) {
 
 function getApiBase() {
   if (typeof window === "undefined") return API;
+  if (!API) return "";
   const url = new URL(API);
   if (["localhost", "127.0.0.1"].includes(url.hostname) && isPrivateIpv4(window.location.hostname)) {
     url.hostname = window.location.hostname;

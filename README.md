@@ -64,6 +64,13 @@ For phone testing on the same Wi-Fi, open the owner dashboard on the laptop at `
 
 Bootstrap login: `admin` / `admin@pass123` unless overridden in `.env`. The first screen forces a password change.
 
+### Vercel deployment
+The root `vercel.json` deploys the Next.js web app and Express API as services in one Vercel project. `/api/*` is routed to the API service; all other paths are routed to the web service. Browser API requests use the same-origin `/api` path, so do not set `NEXT_PUBLIC_API_URL` or `NEXT_PUBLIC_SOCKET_URL` to a localhost URL in Vercel.
+
+Set `MONGODB_URI`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` in the Vercel project's environment variables. Override the bootstrap login credentials for production, and add Razorpay credentials when payments are enabled. Production cookies default to secure; `COOKIE_SECURE` can explicitly override that behavior. `WEB_ORIGIN` may be set to the deployed web origin; same-origin requests are also allowed automatically.
+
+The API is deployed as a Vercel Function. The repository's standalone Socket.IO server is not exposed by the `/api` rewrite, and Vercel Functions do not provide a persistent Socket.IO server; use a separately hosted realtime service if live socket connections are needed.
+
 ### Razorpay payment verification
 Set `NODE_ENV=development` for local trials. If `NODE_ENV` is unset, the API defaults to production mode. Customer checkout uses Razorpay Orders and the hosted Razorpay Checkout UI (not the on-demand QR Codes API). In development, the signed checkout response is verified against Razorpay's API and the order status endpoint also polls the Razorpay order (`POST /api/v1/payments/:orderId/status`); include the order tracking token in the request body as `trackingToken`. Webhook events are ignored in development. In every non-development environment, settlement is performed only by the signed Razorpay `payment.captured` webhook at `POST /api/v1/webhooks/razorpay`, and API polling is disabled. Configure `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in both environments, and configure `RAZORPAY_WEBHOOK_SECRET` for production.
 

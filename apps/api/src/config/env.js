@@ -25,7 +25,9 @@ export const env = {
   refreshSecret: process.env.JWT_REFRESH_SECRET,
   accessTtl: process.env.ACCESS_TOKEN_TTL || "15m",
   refreshDays: Number(process.env.REFRESH_TOKEN_DAYS || 7),
-  cookieSecure: process.env.COOKIE_SECURE === "true",
+  cookieSecure: process.env.COOKIE_SECURE === undefined
+    ? process.env.NODE_ENV === "production"
+    : process.env.COOKIE_SECURE === "true",
   bootstrapEmail: process.env.BOOTSTRAP_SUPERADMIN_EMAIL || "admin",
   bootstrapPassword: process.env.BOOTSTRAP_SUPERADMIN_PASSWORD || "admin@pass123",
   razorpayKeyId: process.env.RAZORPAY_KEY_ID,
