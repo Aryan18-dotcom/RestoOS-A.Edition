@@ -12,6 +12,7 @@
     "dev:web": "npm run dev -w apps/web",
     "start:api": "npm run start -w apps/api",
     "build:web": "npm run build -w apps/web",
+    "buildRun:web": "npm run build -w apps/web && npm run start -w apps/web",
     "seed:superadmin": "npm run seed:superadmin -w apps/api"
   },
   "devDependencies": {

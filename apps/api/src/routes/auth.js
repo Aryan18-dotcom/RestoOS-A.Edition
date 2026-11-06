@@ -8,12 +8,10 @@ import { env } from "../config/env.js";
 
 const router = Router();
 
-// In production, cross-origin cookies require sameSite="none" and secure=true
-const isProd = env.nodeEnv !== "development";
 const cookieOptions = {
   httpOnly: true,
-  secure: isProd ? true : Boolean(env.cookieSecure),
-  sameSite: isProd ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
   path: "/"
 };
 

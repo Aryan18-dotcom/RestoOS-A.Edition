@@ -1,11 +1,4 @@
-// Resolves base API URL, trimming trailing slashes.
-// Defaults to the local server if running locally, otherwise the production Vercel API.
-const isDev = process.env.NODE_ENV === "development";
-const fallbackUrl = isDev 
-  ? "http://localhost:5000/api/v1" 
-  : "https://restro-os-aedition-api.vercel.app/api/v1";
-
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || fallbackUrl).replace(/\/+$/, "");
+const API_BASE = "/api/v1";
 
 export async function api(endpoint, options = {}) {
   const url = endpoint.startsWith("http")
@@ -22,7 +15,7 @@ export async function api(endpoint, options = {}) {
   const config = {
     ...options,
     headers,
-    credentials: "include" // REQUIRED: enables cross-domain cookie transmission
+    credentials: "include"
   };
 
   const res = await fetch(url, config);
