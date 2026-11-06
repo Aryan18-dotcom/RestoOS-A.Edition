@@ -16,9 +16,11 @@ import { connectDatabase } from "./config/db.js";
 function isPrivateIpv4(address) {
   const octets = address.split(".").map(Number);
   if (octets.length !== 4 || octets.some(value => value < 0 || value > 255)) return false;
-  return octets[0] === 10 ||
+  return (
+    octets[0] === 10 ||
     (octets[0] === 192 && octets[1] === 168) ||
-    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31);
+    (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
+  );
 }
 
 function getLanIpv4() {
@@ -35,9 +37,11 @@ function isAllowedLanWebOrigin(origin) {
   try {
     const url = new URL(origin);
     const webOrigin = new URL(env.webOrigin);
-    return url.protocol === "http:" &&
+    return (
+      url.protocol === "http:" &&
       url.port === webOrigin.port &&
-      isPrivateIpv4(url.hostname);
+      isPrivateIpv4(url.hostname)
+    );
   } catch {
     return false;
   }
@@ -54,17 +58,28 @@ function isSameOrigin(origin, req) {
 const app = express();
 app.set("trust proxy", 1);
 app.use(helmet());
-app.use(cors((req, callback) => {
-  const origin = req.get("Origin");
-  const allowed = !origin ||
-      origin === env.webOrigin ||
+
+// Normalizing configured webOrigin without trailing slash for comparison
+const configuredOrigin = env.webOrigin ? env.webOrigin.replace(/\/+$/, "") : "";
+
+app.use(
+  cors((req, callback) => {
+    const origin = req.get("Origin");
+    const normalizedOrigin = origin ? origin.replace(/\/+$/, "") : "";
+
+    const allowed =
+      !origin ||
+      normalizedOrigin === configuredOrigin ||
       isSameOrigin(origin, req) ||
       (env.nodeEnv === "development" && isAllowedLanWebOrigin(origin));
-  callback(null, {
-    origin: allowed ? origin : false,
-    credentials: true
-  });
-}));
+
+    callback(null, {
+      origin: allowed ? origin : false,
+      credentials: true
+    });
+  })
+);
+
 app.use(pinoHttp({ autoLogging: false }));
 app.use(async (_req, _res, next) => {
   try {
@@ -77,17 +92,21 @@ app.use(async (_req, _res, next) => {
 app.use(cookieParser());
 app.post("/api/v1/webhooks/razorpay", express.raw({ type: "application/json", limit: "1mb" }), razorpayWebhook);
 app.use(express.json({ limit: "1mb" }));
+
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/super-admin", superAdminRoutes);
 app.use("/api/v1/menu", menuRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/kitchen", kitchenRoutes);
+
 app.get("/api/v1/network", (_req, res) => {
   if (env.nodeEnv !== "development") return res.sendStatus(404);
   res.json({ lanIpv4: getLanIpv4() });
 });
+
 app.get("/api/v1/health", (_req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }));
+
 app.use((err, _req, res, _next) => {
   const status = err.status || (err.name === "ZodError" ? 400 : 500);
   if (status >= 500) console.error(`[api] ${status}: ${err.message}`);
@@ -96,4 +115,5 @@ app.use((err, _req, res, _next) => {
     details: status === 400 ? err.issues : undefined
   });
 });
+
 export default app;
